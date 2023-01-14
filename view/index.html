@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title></title>
+  </head>
+  <body>
+    <h1>Get resonse from the server</h1>
+    <h2>Socket id: <i id="Id"></i></h2>
+    <select id="list"></select>
+
+    Message: <textarea id="msg" type="text"></textarea>
+    <button id="btn">Send Message</button>
+
+    <h4>All messages</h4>
+    <ul></ul>
+    <script src="socket.io/socket.io.js"></script>
+    <script>
+      const socket = io();
+
+      socket.on("connect", () => {
+        data = { socket: socket.id, msg: localStorage.getItem("value") };
+        socket.emit("newConnection", JSON.stringify(data));
+      });
+
+      const button = document.getElementById("btn");
+      const textmsg1 = document.getElementById("msg");
+      const output = document.getElementById("Id");
+      const list = document.getElementById("list");
+
+      const list_of_msgs_chat = [];
+
+      socket.on("server", (msg) => {
+        output.innerText = msg;
+      });
+
+      function createListElement1(text) {
+        const li = document.createElement("li");
+        li.textContent = text;
+        return li;
+      }
+
+      function showMsgs() {
+        const ul = document.querySelector("ul");
+        len = list_of_msgs_chat.length;
+        nth = len - 1;
+        ul.appendChild(createListElement1(list_of_msgs_chat[nth]));
+      }
+
+      socket.on("chatMsg", (msg) => {
+        console.log(msg);
+        list_of_msgs_chat.push(msg);
+        showMsgs();
+      });
+
+      function selectReciever(list) {
+        let selectedOption = list.options[list.selectedIndex].text;
+        return selectedOption;
+      }
+
+      function createListElement(text) {
+        var option = document.createElement("OPTION");
+        var txt = document.createTextNode(text);
+        option.appendChild(txt);
+        list.insertBefore(option, list.lastChild);
+      }
+
+      socket.on("total_clients", (msg) => {
+        createListElement(msg);
+      });
+      let receiverId = [];
+
+      list.addEventListener("change", () => {
+        receiverId.pop();
+        var receiverId_1 = selectReciever(list);
+        receiverId.push(receiverId_1);
+      });
+
+      button.addEventListener("click", () => {
+        if (receiverId.length !== 0) {
+          let textmsg = textmsg1.value;
+          recId = receiverId[0];
+          senderId = socket.id;
+          var data = { textmsg, recId, senderId };
+          socket.emit("message", JSON.stringify(data));
+        } else {
+          alert("No receiver");
+        }
+      });
+    </script>
+  </body>
+</html>
